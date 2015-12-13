@@ -10,16 +10,6 @@
     tools:showIn="@layout/activity_entrar"
     tools:context="com.dam.salesianostriana.proyecto_trianadvisor.EntrarActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="TrianAdvisor"
-        android:id="@+id/textView2"
-        android:layout_marginTop="34dp"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true" />
-
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -28,10 +18,10 @@
         android:id="@+id/linearLayout"
         android:paddingLeft="30dp"
         android:paddingRight="30dp"
-        android:layout_below="@+id/textView2"
+        android:layout_below="@+id/imageView2"
         android:layout_alignParentEnd="true"
-        android:layout_marginTop="64dp"
-        android:layout_alignParentStart="true">
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="30dp">
 
         <android.support.design.widget.TextInputLayout android:layout_width="match_parent"
             android:layout_height="wrap_content">
@@ -58,8 +48,8 @@
         <Button
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="LOGIN"
-            android:id="@+id/button"
+            android:text="CRUZAR EL PUENTE"
+            android:id="@+id/button_login"
             android:layout_marginTop="48dp"
             android:background="@drawable/bg_button"
             android:textColor="@android:color/white"
@@ -67,10 +57,16 @@
             />
 
 
-
-
     </LinearLayout>
 
+    <ImageView
+        android:layout_width="200dp"
+        android:layout_height="150dp"
+        android:id="@+id/imageView2"
+        android:src="@drawable/logo_triana"
+        android:layout_marginTop="48dp"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true" />
 
 
 </RelativeLayout>
