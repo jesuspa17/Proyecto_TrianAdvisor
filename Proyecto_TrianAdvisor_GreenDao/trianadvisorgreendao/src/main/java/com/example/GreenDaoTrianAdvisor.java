@@ -33,9 +33,43 @@ public class GreenDaoTrianAdvisor {
         usuario.addStringProperty("nombre");
         usuario.addStringProperty("email");
         usuario.addStringProperty("username");
-        usuario.addStringProperty("foto");
+        //preguntar si hay que hacerlo con una clase aparte.
+        usuario.addStringProperty("url_foto");
         usuario.addStringProperty("sessionToken");
+        usuario.addStringProperty("updatedAt"); // ????
 
+        //Tabla Sitios.
+        Entity sitio = schema.addEntity("Sitio");
+        sitio.addStringProperty("objectId");
+        sitio.addStringProperty("nombre");
+        sitio.addStringProperty("direccion");
+        sitio.addStringProperty("telefono");
+        sitio.addStringProperty("descripcion");
+        sitio.addStringProperty("categoria");
+        //preguntar si hay que hacerlo con una clase aparte.
+        sitio.addStringProperty("coordenadas");
+        sitio.addStringProperty("url_foto");
+        sitio.addStringProperty("updatedAt");
+
+
+        //Tabla Valoraciones.
+        Entity valoracion = schema.addEntity("Valoracion");
+        valoracion.addStringProperty("objectId");
+        valoracion.addDoubleProperty("valoracion");
+
+        //updateAt?
+        //añadir sitio a la tabla.
+
+
+        //Tabla Comentarios.
+        Entity comentario = schema.addEntity("Comentario");
+        comentario.addStringProperty("objectId");
+        comentario.addStringProperty("cuerpo_comentario");
+        comentario.addStringProperty("fecha");
+        //updateAt?
+        //añadir sitio a la tabla.
+        //añadir usuario a la tabla.
+        
         //Tabla alimento
         Entity alimento = schema.addEntity("Alimento");
         alimento.addIdProperty().autoincrement();

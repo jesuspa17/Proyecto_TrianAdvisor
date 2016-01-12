@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Proyecto_TrianAdvisor_Final.iml" filepath="$PROJECT_DIR$/Proyecto_TrianAdvisor_Final.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Proyecto_TrianAdvisor_GreenDao.iml" filepath="$PROJECT_DIR$/Proyecto_TrianAdvisor_GreenDao.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/trianadvisorgreendao/trianadvisorgreendao.iml" filepath="$PROJECT_DIR$/trianadvisorgreendao/trianadvisorgreendao.iml" />
     </modules>
