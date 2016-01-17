@@ -116,7 +116,7 @@ public class SitioAdapter extends RecyclerView.Adapter<SitioAdapter.ViewHolder> 
                     List<com.dam.salesianostriana.proyecto_trianadvisor.greendao.Valoracion> lista_dao = new ArrayList<>();
 
                     if (valoracion != null) {
-
+                        float total_valoraciones = 0;
                         for (int i = 0; i < valoracion.getResults().size(); i++) {
 
                             String objectid = valoracion.getResults().get(i).getObjectId();
@@ -128,7 +128,14 @@ public class SitioAdapter extends RecyclerView.Adapter<SitioAdapter.ViewHolder> 
                             Log.i("VAL_NUEVA","VAL: " + val);
                             Log.i("VAL_NUEVA","UP: " + updatedAt);
 
+                            total_valoraciones += valoracion.getResults().get(i).getValoracion();
+
+                            if(valoracion.getResults().size()!=0){
+                                total_valoraciones = total_valoraciones / valoracion.getResults().size();
+                            }
+
                             if(!valoracion.getResults().isEmpty()){
+
                                 //Guardo en la base de datos las valoraciones de todos los sitios
                                 com.dam.salesianostriana.proyecto_trianadvisor.greendao.Valoracion val_dao
                                         = new com.dam.salesianostriana.proyecto_trianadvisor.greendao.Valoracion(
@@ -136,9 +143,16 @@ public class SitioAdapter extends RecyclerView.Adapter<SitioAdapter.ViewHolder> 
                                         val,
                                         updatedAt,
                                         sitio.getId());
-                                valoracionDao.insertOrReplace(val_dao);
-                            }
 
+                                com.dam.salesianostriana.proyecto_trianadvisor.greendao.Valoracion v = valoracionDao.queryBuilder().where(ValoracionDao.Properties.ObjectId.eq(objectid)).unique();
+
+                                if(v==null){
+                                    valoracionDao.insertOrReplace(val_dao);
+                                }else{
+                                    valoracionDao.delete(v);
+                                    valoracionDao.insert(val_dao);
+                                }
+                            }
                         }
 
                         //Es la lista de las valoraciones que tiene un sitio almacenadas en GreenDao. Se obtiene a través de la id del sitio.
