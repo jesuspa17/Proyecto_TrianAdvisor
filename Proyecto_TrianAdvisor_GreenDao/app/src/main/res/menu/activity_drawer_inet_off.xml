@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item android:id="@+id/action_bares" android:icon="@drawable/ic_bar_resta"
+            android:title="Bares y Restaurantes" />
+        <item android:id="@+id/nav_cerca_mi" android:icon="@drawable/ic_maps"
+            android:title="Cerca de mí" />
+    </group>
+
+    <item android:title="Opciones">
+        <menu>
+
+            <item android:id="@+id/nav_cerrar" android:icon="@drawable/ic_cerrar_sesion"
+                android:title="Cerrar sesión" />
+        </menu>
+    </item>
+
+</menu>

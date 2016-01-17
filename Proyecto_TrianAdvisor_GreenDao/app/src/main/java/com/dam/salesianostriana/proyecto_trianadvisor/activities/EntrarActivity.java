@@ -12,7 +12,9 @@ import android.widget.Toast;
 
 import com.dam.salesianostriana.proyecto_trianadvisor.R;
 import com.dam.salesianostriana.proyecto_trianadvisor.Servicio;
+import com.dam.salesianostriana.proyecto_trianadvisor.greendao.UsuarioDao;
 import com.dam.salesianostriana.proyecto_trianadvisor.pojos_RetroFit.usuario.Usuario;
+import com.dam.salesianostriana.proyecto_trianadvisor.utilidades.Utils;
 
 import java.io.IOException;
 
@@ -27,6 +29,8 @@ public class EntrarActivity extends AppCompatActivity {
     EditText txtUsuario,txtPassword;
 
     SharedPreferences prefs;
+
+    UsuarioDao usuarioDao;
 
 
     @Override
@@ -52,6 +56,8 @@ public class EntrarActivity extends AppCompatActivity {
             this.finish();
         }
 
+        usuarioDao = Utils.instanciarBD(this).getUsuarioDao();
+
         btn_login.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -60,31 +66,45 @@ public class EntrarActivity extends AppCompatActivity {
                 final String us = txtUsuario.getText().toString();
                 final String pass = txtPassword.getText().toString();
 
-                //Lanzo el asyntasck.
-                new ObtenerUsuarioTask(){
-                    @Override
-                    protected void onPostExecute(Usuario usuario) {
-                        super.onPostExecute(usuario);
+                if(Utils.comprobarInternet(EntrarActivity.this)) {
 
-                        //Compruebo que el usuario obtenido no sea nulo, es decir, que se ha obtenido algún dato.
-                        if(usuario!=null){
-                            //Almaceno el sessionToken
-                            String sessionToken = usuario.getSessionToken();
-                                i = new Intent(EntrarActivity.this,MainActivity.class);
+                    //Lanzo el asyntasck.
+                    new ObtenerUsuarioTask() {
+                        @Override
+                        protected void onPostExecute(Usuario usuario) {
+                            super.onPostExecute(usuario);
+
+                            //Compruebo que el usuario obtenido no sea nulo, es decir, que se ha obtenido algún dato.
+                            if (usuario != null) {
+                                //Almaceno el sessionToken
+                                String sessionToken = usuario.getSessionToken();
+                                i = new Intent(EntrarActivity.this, MainActivity.class);
+
                                 //Guardo el sessionToken en las preferencias
-                                editor.putString("sessionToken",sessionToken);
+                                editor.putString("sessionToken", sessionToken);
+
+                                if(prefs.getString("fecha_sitios",null) == null || prefs.getString("fecha_valoraciones",null) == null ||prefs.getString("fecha_comentarios",null) == null) {
+                                    editor.putString("fecha_sitios", "0000-01-01T00:00:00.000Z");
+                                    editor.putString("fecha_valoraciones", "0000-01-01T00:00:00.000Z");
+                                    editor.putString("fecha_comentarios", "0000-01-01T00:00:00.000Z");
+                                }
+
                                 editor.apply();
                                 //Inicio el activity.
                                 startActivity(i);
                                 EntrarActivity.this.finish();
-                        }else{
-                            Toast.makeText(EntrarActivity.this, "Usuario o contraseña incorrecta", Toast.LENGTH_LONG).show();
+
+                            } else {
+                                Toast.makeText(EntrarActivity.this, "Usuario o contraseña incorrecta", Toast.LENGTH_LONG).show();
+                            }
+
                         }
-
-                    }
-                }.execute(us, pass);
-
-
+                    }.execute(us, pass);
+                }else{
+                    i = new Intent(EntrarActivity.this, MainActivity.class);
+                    startActivity(i);
+                    EntrarActivity.this.finish();
+                }
             }
         });
 

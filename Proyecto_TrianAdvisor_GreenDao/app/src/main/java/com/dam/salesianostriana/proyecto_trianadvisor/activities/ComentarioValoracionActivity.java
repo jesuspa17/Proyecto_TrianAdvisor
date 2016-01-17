@@ -14,7 +14,6 @@ import android.widget.Toast;
 
 import com.dam.salesianostriana.proyecto_trianadvisor.R;
 import com.dam.salesianostriana.proyecto_trianadvisor.Servicio;
-import com.dam.salesianostriana.proyecto_trianadvisor.utilidades.Utils;
 import com.dam.salesianostriana.proyecto_trianadvisor.pojos_RetroFit.insert.ActuValoracion;
 import com.dam.salesianostriana.proyecto_trianadvisor.pojos_RetroFit.insert.Actualizado;
 import com.dam.salesianostriana.proyecto_trianadvisor.pojos_RetroFit.insert.NuevaValoracion;
@@ -23,6 +22,7 @@ import com.dam.salesianostriana.proyecto_trianadvisor.pojos_RetroFit.insert.Para
 import com.dam.salesianostriana.proyecto_trianadvisor.pojos_RetroFit.valoraciones.Sitio;
 import com.dam.salesianostriana.proyecto_trianadvisor.pojos_RetroFit.valoraciones.Usuario;
 import com.dam.salesianostriana.proyecto_trianadvisor.pojos_RetroFit.valoraciones.Valoracion;
+import com.dam.salesianostriana.proyecto_trianadvisor.utilidades.Utils;
 
 import java.io.IOException;
 

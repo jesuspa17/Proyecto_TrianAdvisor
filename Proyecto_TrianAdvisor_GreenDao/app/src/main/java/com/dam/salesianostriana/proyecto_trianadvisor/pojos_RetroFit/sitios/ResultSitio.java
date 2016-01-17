@@ -38,6 +38,7 @@ public class ResultSitio {
     @SerializedName("updatedAt")
     @Expose
     private String updatedAt;
+    private String url_foto;
 
     /**
      * No args constructor for use in serialization
@@ -51,13 +52,21 @@ public class ResultSitio {
         this.direccion = direccion;
         this.foto = foto;
     }
-
+/*
     public ResultSitio(String objectId, String nombre, String direccion, String categoria, Foto foto){
         this.objectId = objectId;
         this.nombre = nombre;
         this.direccion = direccion;
         this.categoria = categoria;
         this.foto = foto;
+    }*/
+
+    public ResultSitio(String objectId, String nombre, String direccion, String categoria, String foto){
+        this.objectId = objectId;
+        this.nombre = nombre;
+        this.direccion = direccion;
+        this.categoria = categoria;
+        this.url_foto = foto;
     }
 
     /**
@@ -84,6 +93,14 @@ public class ResultSitio {
         this.objectId = objectId;
         this.telefono = telefono;
         this.updatedAt = updatedAt;
+    }
+
+    public String getUrl_foto() {
+        return url_foto;
+    }
+
+    public void setUrl_foto(String url_foto) {
+        this.url_foto = url_foto;
     }
 
     /**

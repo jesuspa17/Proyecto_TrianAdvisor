@@ -120,4 +120,17 @@ public interface TrianAdvisorApi {
     @PUT("/1/classes/valoracion/{objectId}")
     Call<Actualizado> actualizarValoracion(@Body ActuValoracion nueva, @Path("objectId") String obj);
 
+
+    /**
+     * Obtener sitios desde una fecha
+     */
+    @GET("/1/classes/sitio?")
+    Call<Sitio> obtenerSitosDesdeFecha(@Query(value = "where", encoded = true) String json);
+
+    /**
+     * Obtener valoraciones desde una fecha
+     */
+    @GET("/1/classes/valoracion?")
+    Call<Valoracion> obtenerValoracionesDesdeFecha(@Query(value = "where", encoded = true) String json);
+
 }

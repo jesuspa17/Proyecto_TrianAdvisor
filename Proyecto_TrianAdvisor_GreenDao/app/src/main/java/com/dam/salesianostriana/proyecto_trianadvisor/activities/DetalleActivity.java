@@ -16,10 +16,17 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RatingBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.dam.salesianostriana.proyecto_trianadvisor.R;
 import com.dam.salesianostriana.proyecto_trianadvisor.Servicio;
 import com.dam.salesianostriana.proyecto_trianadvisor.adaptadores.ValoracionAdapter;
+import com.dam.salesianostriana.proyecto_trianadvisor.greendao.ComentarioDao;
+import com.dam.salesianostriana.proyecto_trianadvisor.greendao.Sitio;
+import com.dam.salesianostriana.proyecto_trianadvisor.greendao.SitioDao;
+import com.dam.salesianostriana.proyecto_trianadvisor.greendao.Usuario;
+import com.dam.salesianostriana.proyecto_trianadvisor.greendao.UsuarioDao;
+import com.dam.salesianostriana.proyecto_trianadvisor.greendao.ValoracionDao;
 import com.dam.salesianostriana.proyecto_trianadvisor.pojos_RetroFit.comentarios.Comentario;
 import com.dam.salesianostriana.proyecto_trianadvisor.pojos_RetroFit.sitios.ResultSitio;
 import com.dam.salesianostriana.proyecto_trianadvisor.pojos_RetroFit.valoraciones.Valoracion;
@@ -54,6 +61,10 @@ public class DetalleActivity extends AppCompatActivity {
     double latitud;
     double longitud;
 
+    SitioDao sitioDao;
+    ValoracionDao valoracionDao;
+    ComentarioDao comentarioDao;
+    UsuarioDao usuarioDao;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,9 +81,19 @@ public class DetalleActivity extends AppCompatActivity {
         txtDireccion = (TextView) findViewById(R.id.textViewDireccionDetalle);
         txtNumero = (TextView) findViewById(R.id.textViewNumeroTlfDetalle);
         txtLlamarAviso = (TextView) findViewById(R.id.textViewLlamarAviso);
+
         ratingBarDetalle = (RatingBar) findViewById(R.id.ratingBarValoracionDetalle);
+        ratingBarDetalle.setIsIndicator(true);
+
         linearLayoutComoLlegar = (LinearLayout) findViewById(R.id.linearComoLlegar);
         linearLayoutTelefono = (LinearLayout) findViewById(R.id.linearTelefono);
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+
+        //Inicializo los elementos del recyler que contendrá los comentarios
+        recyclerView = (RecyclerView) findViewById(R.id.recycler_valoraciones);
+        recyclerView.setHasFixedSize(true);
+        final RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
+        recyclerView.setLayoutManager(layoutManager);
 
         //Rescato de la vista anterior el objectId del sitio
         //para realizar la consulta con la que obtendré los detalles.
@@ -80,32 +101,82 @@ public class DetalleActivity extends AppCompatActivity {
         if (extras != null) {
             object_id = extras.getString("object_id");
             Log.i("OBJECT_RECIBIDO", object_id);
-            new ObtenerDatosDeUnSitioTask().execute(object_id);
+
+            if (Utils.comprobarInternet(this)) {
+                new ObtenerDatosDeUnSitioTask().execute(object_id);
+            } else {
+
+                //Inicizalizo db y creo un objeto valoracion green dao que servirá para obtener el id del sitio para posteriormente
+                //hacer la media de las valoraciones.
+                sitioDao = Utils.instanciarBD(this).getSitioDao();
+                valoracionDao = Utils.instanciarBD(DetalleActivity.this).getValoracionDao();
+                comentarioDao = Utils.instanciarBD(DetalleActivity.this).getComentarioDao();
+                usuarioDao = Utils.instanciarBD(DetalleActivity.this).getUsuarioDao();
+                Sitio sitio = sitioDao.queryBuilder().where(SitioDao.Properties.ObjectId.eq(object_id)).unique();
+
+                //DETALLES DEL SITIO.
+                assert sitio != null;
+                toolbar.setTitle(sitio.getNombre());
+                txtDescripcion.setText(sitio.getDescripcion());
+                txtDireccion.setText(sitio.getDireccion());
+                if (sitio.getTelefono() == null) {
+                    txtLlamarAviso.setText("No se dispone del número");
+                    txtNumero.setText("");
+                } else {
+                    txtNumero.setText(sitio.getTelefono());
+                }
+
+                Picasso.with(DetalleActivity.this).load(sitio.getUrl_foto()).fit().into(imageViewDetalle);
+                latitud = Double.parseDouble(sitio.getLatitud());
+                longitud = Double.parseDouble(sitio.getLongitud());
+
+                //PARTE DE VALORACIONES
+                List<com.dam.salesianostriana.proyecto_trianadvisor.greendao.Valoracion> lista_valoraciones = valoracionDao.queryBuilder().where(ValoracionDao.Properties.SitioId_v.eq(sitio.getId())).list();
+                ratingBarDetalle.setRating(Utils.calcularMediaValoracionesGreenDao(lista_valoraciones));
+
+                //PARTE DE COMENTARIOS
+                List<com.dam.salesianostriana.proyecto_trianadvisor.greendao.Comentario> lista_comentarios = comentarioDao.queryBuilder().where(ComentarioDao.Properties.ComentarioId_c.eq(sitio.getId())).list();
+                List<ValoracionPojoAdapter> lista_comentarios_def = new ArrayList<>();
+
+                Log.i("ARRAY_COMENTARIOS", "TAM: " + lista_comentarios.size());
+                for (int i = 0; i < lista_comentarios.size(); i++) {
+
+                    Usuario usuario = usuarioDao.queryBuilder().where(UsuarioDao.Properties.Id.eq(lista_comentarios.get(i).getUsuarioId_c())).unique();
+                    lista_comentarios_def.add(new ValoracionPojoAdapter(usuario.getUrl_foto(), usuario.getNombre(), lista_comentarios.get(i).getCuerpo_comentario(), lista_comentarios.get(i).getFecha()));
+                    Log.i("COMENTARIO", "CUERPO: " + lista_comentarios.get(i).getCuerpo_comentario());
+                }
+
+                adapter = new ValoracionAdapter(lista_comentarios_def);
+                recyclerView.setAdapter(adapter);
+            }
+
         }
 
-        //Inicializo los elementos del recyler que contendrá las valoraciones
-        recyclerView = (RecyclerView) findViewById(R.id.recycler_valoraciones);
-        recyclerView.setHasFixedSize(true);
-        final RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
-        recyclerView.setLayoutManager(layoutManager);
-
-
-        //Este FloatingButton abrirá el activity para mandar una valoración sobre el sitio
-        //que se está viendo.
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent i = new Intent(DetalleActivity.this,ComentarioValoracionActivity.class)  ;
-                i.putExtra("object_id",object_id);
-                startActivity(i);
-            }
-        });
+        if (Utils.comprobarInternet(this)) {
+            //Este FloatingButton abrirá el activity para mandar una valoración sobre el sitio
+            //que se está viendo.
+            fab.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Intent i = new Intent(DetalleActivity.this, ComentarioValoracionActivity.class);
+                    i.putExtra("object_id", object_id);
+                    startActivity(i);
+                }
+            });
+        } else {
+            fab.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Toast.makeText(DetalleActivity.this, "Para comentar y valorar ha de estar logueado", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
 
         //Realiza el intent implicito que nos lleva a la ubicación del sitio.
         linearLayoutComoLlegar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 Uri gmmIntentUri = Uri.parse("geo:0,0?q=" + latitud + "," + longitud + "");
                 Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
                 mapIntent.setPackage("com.google.android.apps.maps");
@@ -141,9 +212,9 @@ public class DetalleActivity extends AppCompatActivity {
                 }
 
                 assert result != null;
-                if(result.code() == 200 || result.code() == 201){
+                if (result.code() == 200 || result.code() == 201) {
                     return result.body();
-                }else {
+                } else {
                     return null;
                 }
 
@@ -179,6 +250,7 @@ public class DetalleActivity extends AppCompatActivity {
 
                 Picasso.with(DetalleActivity.this).load(url_imagen).fit().into(imageViewDetalle);
 
+
                 //Guardo la latitud y la longitud en variables locales para
                 //poder pasárselas al intent que nos abre el mapa con la
                 //geolocalización del mapa.
@@ -187,11 +259,10 @@ public class DetalleActivity extends AppCompatActivity {
 
                 //Url base  a la que se la pasa el objectId del sitio para obtener su valoraciones y comentarios.
                 String URL_BASE = "{\"sitio\": { \"__type\": \"Pointer\", \"className\": \"sitio\", " +
-                        "\"objectId\": \""+obj_id+"\" } }";
+                        "\"objectId\": \"" + obj_id + "\" } }";
 
                 //Ejecuto el asyntasck que devuelve la valoración del sitio.
                 new ObtenerValoracionUnSitioTask().execute(Utils.encodearCadena(URL_BASE));
-
 
                 String url_comentarios = "";
                 try {
@@ -220,9 +291,9 @@ public class DetalleActivity extends AppCompatActivity {
                 }
                 assert result != null;
 
-                if(result.code() == 200 || result.code() == 201){
+                if (result.code() == 200 || result.code() == 201) {
                     return result.body();
-                }else{
+                } else {
                     return null;
                 }
             } else {
@@ -240,11 +311,10 @@ public class DetalleActivity extends AppCompatActivity {
                 for (int i = 0; i < valoracion.getResults().size(); i++) {
                     total_valoraciones += valoracion.getResults().get(i).getValoracion();
                 }
-                if(valoracion.getResults().size()!=0){
+                if (valoracion.getResults().size() != 0) {
                     total_valoraciones = total_valoraciones / valoracion.getResults().size();
                 }
                 //Le asocio el resultado al ratingBar
-                ratingBarDetalle.setIsIndicator(true);
                 ratingBarDetalle.setRating(total_valoraciones);
             }
         }
@@ -266,9 +336,9 @@ public class DetalleActivity extends AppCompatActivity {
                 }
                 assert comentarioResponse != null;
 
-                if(comentarioResponse.code() == 200 || comentarioResponse.code() == 201){
+                if (comentarioResponse.code() == 200 || comentarioResponse.code() == 201) {
                     return comentarioResponse.body();
-                }else{
+                } else {
                     return null;
                 }
             } else {
@@ -280,25 +350,85 @@ public class DetalleActivity extends AppCompatActivity {
         protected void onPostExecute(Comentario comentario) {
             super.onPostExecute(comentario);
 
-            if(comentario!=null) {
-                lista_valoraciones = new ArrayList<>();
-                for (int i = 0; i < comentario.getResults().size(); i++) {
-                    if (comentario.getResults() != null) {
+            //Para obtener los comentarios de la Bd interna, tendría que insertar primero los usuarios y despues recoger los comentarios
+            //en función del id que green dao le asocia a cada usuario automaticamente.
 
-                        String nom_user_comentario = comentario.getResults().get(i).getUsuario().getNombre();
-                        String coment = comentario.getResults().get(i).getComentario();
-                        String foto = "";
-                        if(comentario.getResults().get(i).getUsuario().getFoto().getUrl()  != null){
-                            foto = comentario.getResults().get(i).getUsuario().getFoto().getUrl();
-                        }else{
-                            foto ="";
+            UsuarioDao usuarioDao = Utils.instanciarBD(DetalleActivity.this).getUsuarioDao();
+            ComentarioDao comentarioDao = Utils.instanciarBD(DetalleActivity.this).getComentarioDao();
+            SitioDao sitioDao = Utils.instanciarBD(DetalleActivity.this).getSitioDao();
+
+            if (comentario != null) {
+
+                lista_valoraciones = new ArrayList<>();
+
+                //Obtengo el sitio que estamos visualizando para obtener su id, este id también lo necesitaré para
+                //poder asociar los comentarios al sitio.
+                Sitio sitio = sitioDao.queryBuilder().where(SitioDao.Properties.ObjectId.eq(object_id)).unique();
+
+                try {
+
+                    for (int i = 0; i < comentario.getResults().size(); i++) {
+
+                        if (comentario.getResults() != null) {
+
+                            String nom_user_comentario = "";
+
+                            if (comentario.getResults().get(i).getUsuario() != null) {
+
+                                nom_user_comentario = comentario.getResults().get(i).getUsuario().getNombre();
+                                String coment = comentario.getResults().get(i).getComentario();
+                                String foto = "";
+                                if (comentario.getResults().get(i).getUsuario().getFoto().getUrl() != null) {
+                                    foto = comentario.getResults().get(i).getUsuario().getFoto().getUrl();
+                                } else {
+                                    foto = "";
+                                }
+
+                                //Datos que necesitaré para almacenar los comentarios en la base de datos local:
+
+                                //Datos de usuario.
+                                String fecha = comentario.getResults().get(i).getCreatedAt();
+                                String obj_id_user = comentario.getResults().get(i).getUsuario().getObjectId();
+                                String nomb_user = comentario.getResults().get(i).getUsuario().getNombre();
+                                String email = comentario.getResults().get(i).getUsuario().getEmail();
+                                String username = comentario.getResults().get(i).getUsuario().getUsername();
+                                String url_foto = comentario.getResults().get(i).getUsuario().getFoto().getUrl();
+                                String sessionToken = comentario.getResults().get(i).getUsuario().getSessionToken();
+                                String updatedAtUser = comentario.getResults().get(i).getUsuario().getUpdatedAt();
+
+                                //Datos del comentario
+                                String obj_id_comen = comentario.getResults().get(i).getObjectId();
+                                String updated_coment = comentario.getResults().get(i).getUpdatedAt();
+
+                                //Se crea el Objeto usuario que se utilizará para dar de alta uno nuevo en la base de datos y se inserta en ella.
+                                Usuario usuario_green = new Usuario(obj_id_user, nomb_user, email, username, url_foto, sessionToken, updatedAtUser);
+                                usuarioDao.insertOrReplace(usuario_green);
+
+                                //Obtengo el id del usuario insertado anteriormente, ya que lo necesitamos para insertarlo en la tabla comentarios.
+                                //De este modo quedarán asociados los comentarios con sus respectivos usuarios.
+                                long id_usuario = usuarioDao.getKey(usuario_green);
+
+                                //Creo el objeto que insertaré en la tabla comentarios con GreenDao y lo inserto.
+                                com.dam.salesianostriana.proyecto_trianadvisor.greendao.Comentario comentario_green
+                                        = new com.dam.salesianostriana.proyecto_trianadvisor.greendao.Comentario(obj_id_comen, coment, fecha, updated_coment, id_usuario, sitio.getId());
+
+                                com.dam.salesianostriana.proyecto_trianadvisor.greendao.Comentario c = comentarioDao.queryBuilder().where(ComentarioDao.Properties.ObjectId.eq(obj_id_comen)).unique();
+
+                                if(c==null){
+                                    comentarioDao.insertOrReplaceInTx(comentario_green);
+                                }
+
+                                //Lista usada para mostrar los comentarios mediante el recycler.
+                                lista_valoraciones.add(new ValoracionPojoAdapter(foto, nom_user_comentario, coment, fecha));
+
+                            }
                         }
-                        String fecha = comentario.getResults().get(i).getCreatedAt();
-                        lista_valoraciones.add(new ValoracionPojoAdapter(foto, nom_user_comentario, coment, fecha));
                     }
+                    adapter = new ValoracionAdapter(lista_valoraciones);
+                    recyclerView.setAdapter(adapter);
+                }catch (Exception e){
+                    e.printStackTrace();
                 }
-                adapter = new ValoracionAdapter(lista_valoraciones);
-                recyclerView.setAdapter(adapter);
             }
         }
     }

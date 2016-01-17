@@ -24,6 +24,7 @@ import com.dam.salesianostriana.proyecto_trianadvisor.Servicio;
 import com.dam.salesianostriana.proyecto_trianadvisor.fragments.MiPerfilFragment;
 import com.dam.salesianostriana.proyecto_trianadvisor.fragments.SitiosFragment;
 import com.dam.salesianostriana.proyecto_trianadvisor.pojos_RetroFit.usuario.Usuario;
+import com.dam.salesianostriana.proyecto_trianadvisor.utilidades.Utils;
 import com.squareup.picasso.Picasso;
 
 import java.io.IOException;
@@ -52,16 +53,26 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 
-        setSupportActionBar(toolbar);
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.setDrawerListener(toggle);
-        toggle.syncState();
+        if(Utils.comprobarInternet(this)){
+            setContentView(R.layout.activity_main);
+            Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+            setSupportActionBar(toolbar);
+            DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+            ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                    this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+            drawer.setDrawerListener(toggle);
+            toggle.syncState();
+        }else{
+            setContentView(R.layout.activity_inet_off);
+            Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+            setSupportActionBar(toolbar);
+            DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_inet_off);
+            ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                    this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+            drawer.setDrawerListener(toggle);
+            toggle.syncState();
+        }
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
@@ -78,15 +89,30 @@ public class MainActivity extends AppCompatActivity
         //Se obtiene la sessionToken que hay guardada  en las preferencias
         prefs = getSharedPreferences("preferencias", MODE_PRIVATE);
         sessionToken = prefs.getString("sessionToken", null);
-        Log.i("SESSION_TOKEN_OBTENIDA", sessionToken);
+        if(sessionToken!=null){
+            Log.i("SESSION_TOKEN_OBTENIDA", sessionToken);
+        }
+
 
         //Se realiza el asyntasck que devuelve mis datos a través del sessionToken
-        new ObtenerMisDatosTask().execute(sessionToken);
+        if(Utils.comprobarInternet(this)){
+            new ObtenerMisDatosTask().execute(sessionToken);
+        }else{
+            txtUsuarioNav.setText("Anónimo");
+            imageViewUsuario.setImageResource(R.drawable.user);
+        }
     }
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+
+        DrawerLayout drawer = null;
+        if(Utils.comprobarInternet(this)){
+            drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        }else{
+            drawer = (DrawerLayout) findViewById(R.id.drawer_inet_off);
+        }
+
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
@@ -145,21 +171,40 @@ public class MainActivity extends AppCompatActivity
 
             //Cierra el activity y vacia las preferencias.
         } else if (id == R.id.nav_cerrar) {
+            Intent i = null;
+            SharedPreferences.Editor editor;
+            if(Utils.comprobarInternet(this)){
+                new CerrarSesionTask().execute();
+                i = new Intent(MainActivity.this, EntrarActivity.class);
 
-            new CerrarSesionTask().execute();
-            Intent i = new Intent(MainActivity.this, EntrarActivity.class);
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.clear();
-            editor.apply();
-            startActivity(i);
-            this.finish();
+                editor = prefs.edit();
+                editor.remove("sessionToken");
+                editor.apply();
+
+                startActivity(i);
+                this.finish();
+            }else{
+                i = new Intent(MainActivity.this, EntrarActivity.class);
+
+                editor = prefs.edit();
+                editor.remove("sessionToken");
+                editor.apply();
+
+                startActivity(i);
+                this.finish();
+            }
         }
 
         if (f != null) {
             transicionFragment(f);
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = null;
+        if(Utils.comprobarInternet(this)){
+            drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        }else{
+            drawer = (DrawerLayout) findViewById(R.id.drawer_inet_off);
+        }
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
@@ -184,7 +229,6 @@ public class MainActivity extends AppCompatActivity
                 }
 
                 assert response != null;
-
                 if (response.code() == 200 || response.code() == 201) {
                     return response.body();
                 } else {
